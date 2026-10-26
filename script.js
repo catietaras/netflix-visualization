@@ -30,12 +30,27 @@ console.log("Runtime groups:", bins);
 
 const labels = ["Under 90", "90–119", "120–149", "150+"];
 
-const summary = bins.map((bin, i) => ({
-  runtime: labels[i],
-  avgHours: d3.mean(bin, d => d.hours),
-  avgViews: d3.mean(bin, d => d.views),
-  count: bin.length
-}));
+
+const categorized = bins.flatMap((bin, i) =>
+  bin.map(movie => ({ ...movie, category: labels[i] }))
+);
+
+const grouped = d3.rollup(
+  categorized,
+  movies => ({
+    avgHours: d3.mean(movies, d => d.hours),
+    avgViews: d3.mean(movies, d => d.views),
+    count: movies.length
+  }),
+  d => d.category
+);
+
+const summary = labels
+  .filter(label => grouped.has(label))
+  .map(label => ({
+    runtime: label,
+    ...grouped.get(label)
+  }));
 
 console.table(summary);
 
